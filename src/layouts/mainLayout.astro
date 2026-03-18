@@ -3,12 +3,22 @@ import '../styles/global.css';
 const { title } = Astro.props;
 ---
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width" />
-    <meta name="robots" content="noindex, nofollow" />
-    <title>{title}</title>
-  </head>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="robots" content="noindex, nofollow" />
+  
+  <link rel="manifest" href="/manifest.json" />
+
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Funds" />
+  
+  <link rel="icon" type="image/svg+xml" href="https://alliedalgos.org/images/Allied-Algorithms_logo.svg" />
+  <link rel="apple-touch-icon" href="https://alliedalgos.org/images/Allied-Algorithms_logo.svg" />
+
+  <title>{title}</title>
+</head>
   <body class="bg-slate-50 antialiased">
     <main class="max-w-6xl mx-auto px-6">
       <slot />

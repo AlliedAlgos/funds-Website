@@ -1,0 +1,16 @@
+{
+  "name": "Allied Algos Funds",
+  "short_name": "Funds",
+  "description": "Private Fund Tracking for Allied Algos",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "icons": [
+    {
+      "src": "https://alliedalgos.org/images/Allied-Algorithms_logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
