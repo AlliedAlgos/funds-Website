@@ -1,0 +1,17 @@
+---
+import '../styles/global.css';
+const { title } = Astro.props;
+---
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>{title}</title>
+  </head>
+  <body class="bg-slate-50 antialiased">
+    <main class="max-w-6xl mx-auto px-6">
+      <slot />
+    </main>
+  </body>
+</html>

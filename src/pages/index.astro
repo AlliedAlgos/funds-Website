@@ -1,17 +1,81 @@
 ---
+import MainLayout from '../layouts/mainLayout.astro';
+import { pb } from '../lib/pocketbase';
 
+let donations = [];
+let totalAmount = 0;
+
+
+try {
+  donations = await pb.collection('donations').getFullList({
+    filter: 'campaign.name ~ "allied-algorithms"', 
+    expand: 'campaign',
+    sort: '-created',
+  });
+
+  totalAmount = donations.reduce((sum, item) => sum + (item.amount || 0), 0);
+  
+} catch (e) {
+  console.error("PocketBase Error:", e);
+}
+
+const formatCurrency = (num) => {
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(num);
+};
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
-</html>
+<MainLayout title="Funds - Allied Algorithms">
+  <div class="py-6">
+    <div class="mb-8">
+      <div class="bg-blue-600 p-8 rounded-3xl text-white shadow-xl shadow-blue-100">
+        <h1 class="text-5xl font-black tracking-tight text-center"><u>AlliedAlgos</u></h1>
+        <p class="text-blue-100 text-[10px] font-bold uppercase tracking-[0.2em] mb-2">Total Funds Raised</p>
+        <h2 class="text-5xl font-black tracking-tight">{formatCurrency(totalAmount)}</h2>
+      </div>
+
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <table class="w-full text-left table-auto">
+        <thead class="bg-gray-50 border-b border-gray-100">
+          <tr>
+            <th class="px-6 py-4 text-[10px] font-bold uppercase tracking-wider text-gray-400">Donor</th>
+            <th class="hidden md:table-cell px-6 py-4 text-[10px] font-bold uppercase tracking-wider text-gray-400">Message</th>
+            <th class="px-6 py-4 text-[10px] font-bold uppercase tracking-wider text-gray-400 text-right">Amount</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-50">
+          {donations.map((item) => (
+            <tr class="hover:bg-gray-50/50 transition-colors group">
+              <td class="px-6 py-5 whitespace-nowrap">
+                <div class="flex flex-col">
+                  <span class="text-sm font-bold text-gray-900">{item.name || "Anonymous"}</span>
+                  <span class="text-xs text-gray-500 font-medium">{item.email}</span>
+                </div>
+              </td>
+              
+              <td class="hidden md:table-cell px-6 py-5">
+                <p class="text-sm text-gray-600 max-w-xs italic line-clamp-2">
+                  {item.message || "—"}
+                </p>
+              </td>
+
+              <td class="px-6 py-5 text-right">
+                <div class="text-lg font-black text-gray-900">
+                  {formatCurrency(item.amount)}
+                </div>
+                <div class="text-[10px] text-gray-400 font-medium uppercase mt-1">
+                  {new Date(item.created).toLocaleDateString()}
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      
+      {donations.length === 0 && (
+        <div class="p-24 text-center text-gray-400">
+            No records found.
+        </div>
+      )}
+    </div>
+  </div>
+</MainLayout>
