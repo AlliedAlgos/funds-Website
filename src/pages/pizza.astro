@@ -1,0 +1,217 @@
+---
+import MainLayout from '../layouts/mainLayout.astro';
+---
+
+<MainLayout title="Pizza & Raffle Distribution Matrix">
+  <div id="loader" class="fixed inset-0 bg-white z-50 flex flex-col items-center justify-center">
+    <div class="w-12 h-12 border-4 border-orange-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+    <p class="text-gray-500 font-bold tracking-widest animate-pulse">ANALYZING ORDERS...</p>
+  </div>
+
+  <div id="login-overlay" class="fixed inset-0 bg-gray-50 z-40 flex items-center justify-center px-4 hidden">
+    <div class="max-w-md w-full bg-white p-10 rounded-[2.5rem] shadow-2xl border border-gray-100">
+      <div class="text-center mb-8">
+        <h2 class="text-3xl font-black text-gray-900 italic">ADMIN_LOGIN</h2>
+        <p class="text-gray-400 text-xs font-bold uppercase tracking-widest mt-2">Allied Algorithms Vault</p>
+      </div>
+      <form id="login-form" class="space-y-4">
+        <input type="email" name="email" required class="w-full px-5 py-4 rounded-2xl border border-gray-200 outline-none focus:ring-2 focus:ring-orange-500 transition-all" placeholder="Admin Email" />
+        <input type="password" name="password" required class="w-full px-5 py-4 rounded-2xl border border-gray-200 outline-none focus:ring-2 focus:ring-orange-500 transition-all" placeholder="Password" />
+        <button type="submit" class="w-full bg-black text-white font-black py-4 rounded-2xl shadow-xl active:scale-95 transition-all uppercase tracking-widest">Authorize</button>
+        <p id="error-msg" class="text-red-500 text-xs text-center font-bold hidden"></p>
+      </form>
+    </div>
+  </div>
+
+  <div id="dashboard" class="hidden min-h-screen bg-[#FAFAFA] p-4 md:p-10">
+    <div class="max-w-[1600px] mx-auto">
+      
+      <header class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-10 gap-6">
+        <div>
+          <h1 class="text-5xl font-black text-gray-900 tracking-tighter italic uppercase">Distribution_Matrix</h1>
+          <div class="flex items-center gap-4 mt-2">
+             <span class="h-2 w-2 bg-green-500 rounded-full animate-ping"></span>
+             <p class="text-gray-400 text-xs font-bold uppercase tracking-[0.3em]">Live Data Stream</p>
+          </div>
+        </div>
+        
+        <div class="flex flex-wrap gap-3">
+          <button id="copy-all-emails" class="bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-black px-8 py-4 rounded-2xl uppercase tracking-widest transition-all shadow-lg shadow-blue-100 flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" /></svg>
+            Copy All Emails
+          </button>
+          <button id="logout-btn" class="bg-white border border-gray-200 text-gray-400 hover:text-red-500 text-[11px] font-black px-8 py-4 rounded-2xl uppercase tracking-widest transition-all">
+            Logout
+          </button>
+        </div>
+      </header>
+
+      <div class="bg-white border border-gray-200 rounded-[2rem] shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse whitespace-nowrap">
+            <thead>
+              <tr class="bg-gray-50/50 border-b border-gray-100">
+                <th class="p-6 text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] sticky left-0 bg-gray-50 z-20 shadow-[2px_0_5px_rgba(0,0,0,0.02)]">Customer Info</th>
+                <th class="p-6 text-[11px] font-black text-orange-600 uppercase tracking-[0.2em] text-center border-l border-gray-100 bg-orange-50/30">Cheese</th>
+                <th class="p-6 text-[11px] font-black text-orange-600 uppercase tracking-[0.2em] text-center bg-orange-50/30">Pep</th>
+                <th class="p-6 text-[11px] font-black text-orange-600 uppercase tracking-[0.2em] text-center bg-orange-50/30">G.Free</th>
+                <th class="p-6 text-[11px] font-black text-orange-600 uppercase tracking-[0.2em] text-center bg-orange-50/30">Veggie</th>
+                <th class="p-6 text-[11px] font-black text-orange-600 uppercase tracking-[0.2em] text-center bg-orange-50/30">Hawaiian</th>
+                <th class="p-6 text-[11px] font-black text-blue-600 uppercase tracking-[0.2em] text-center border-l border-gray-100 bg-blue-50/30">Raffle A</th>
+                <th class="p-6 text-[11px] font-black text-blue-600 uppercase tracking-[0.2em] text-center bg-blue-50/30">Raffle B</th>
+                <th class="p-6 text-[11px] font-black text-blue-600 uppercase tracking-[0.2em] text-center bg-blue-50/30">Raffle C</th>
+                <th class="p-6 text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] text-right border-l border-gray-100">Paid</th>
+              </tr>
+            </thead>
+            <tbody id="order-tbody" class="divide-y divide-gray-50">
+              </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</MainLayout>
+
+<script>
+  import { pb } from '../lib/pocketbase';
+
+  const loader = document.getElementById('loader');
+  const loginOverlay = document.getElementById('login-overlay');
+  const dashboard = document.getElementById('dashboard');
+  const tbody = document.getElementById('order-tbody');
+  let allEmails: string[] = [];
+
+  async function init() {
+    if (!pb.authStore.isValid) {
+      loader?.classList.add('hidden');
+      loginOverlay?.classList.remove('hidden');
+    } else {
+      await loadData();
+    }
+  }
+
+  async function loadData() {
+    try {
+      const records = await pb.collection('donations').getFullList({ 
+        sort: '-created' 
+      });
+
+      // FILTER: Only show users who have actual order data
+      const filteredRecords = records.filter(r => 
+        r.other_data && 
+        Object.keys(r.other_data).length > 0 &&
+        r.other_data.grandTotal > 0
+      );
+
+      render(filteredRecords);
+      
+      loader?.classList.add('hidden');
+      dashboard?.classList.remove('hidden');
+    } catch (err) {
+      console.error("Data fetch error:", err);
+      pb.authStore.clear();
+      location.reload();
+    }
+  }
+
+  function render(records) {
+    if (!tbody) return;
+    
+    // Store emails for the "Copy All" button
+    allEmails = records.map(r => r.email).filter(e => e);
+
+    if (records.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="10" class="p-20 text-center text-gray-300 font-bold uppercase tracking-widest">No valid orders found</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = records.map(r => {
+      const d = r.other_data || {};
+      const p = d.pizzas || {};
+      const fr = d.freeRaffles || {};
+      const pr = d.paidRaffles || {};
+
+      // Sum Raffle Qty (Free + Paid)
+      const getRaffleQty = (key: string) => (fr[key]?.qty || 0) + (pr[key]?.qty || 0);
+
+      return `
+        <tr class="hover:bg-gray-50/80 transition-all group">
+          <td class="p-6 sticky left-0 bg-white group-hover:bg-[#fcfcfc] z-10 shadow-[2px_0_5px_rgba(0,0,0,0.01)] border-r border-gray-100">
+            <div class="font-black text-gray-900 text-base leading-none mb-1">${r.name || 'Anonymous'}</div>
+            <div class="flex items-center gap-3">
+              <span class="text-[11px] text-gray-400 font-mono tracking-tighter">${r.email || 'no email'}</span>
+              <button onclick="navigator.clipboard.writeText('${r.email}')" class="text-[9px] font-black text-blue-500 uppercase hover:text-blue-700 transition-colors">Copy</button>
+            </div>
+          </td>
+          <td class="p-6 text-center font-black ${p.cheese?.qty > 0 ? 'text-orange-600 bg-orange-50/20' : 'text-gray-200'}">${p.cheese?.qty || 0}</td>
+          <td class="p-6 text-center font-black ${p.pepperoni?.qty > 0 ? 'text-orange-600 bg-orange-50/20' : 'text-gray-200'}">${p.pepperoni?.qty || 0}</td>
+          <td class="p-6 text-center font-black ${p.glutenFree?.qty > 0 ? 'text-orange-600 bg-orange-50/20' : 'text-gray-200'}">${p.glutenFree?.qty || 0}</td>
+          <td class="p-6 text-center font-black ${p.veggie?.qty > 0 ? 'text-orange-600 bg-orange-50/20' : 'text-gray-200'}">${p.veggie?.qty || 0}</td>
+          <td class="p-6 text-center font-black ${p.hawaiian?.qty > 0 ? 'text-orange-600 bg-orange-50/20' : 'text-gray-200'}">${p.hawaiian?.qty || 0}</td>
+          <td class="p-6 text-center font-black ${getRaffleQty('A') > 0 ? 'text-blue-600 bg-blue-50/20' : 'text-gray-200'}">${getRaffleQty('A')}</td>
+          <td class="p-6 text-center font-black ${getRaffleQty('B') > 0 ? 'text-blue-600 bg-blue-50/20' : 'text-gray-200'}">${getRaffleQty('B')}</td>
+          <td class="p-6 text-center font-black ${getRaffleQty('C') > 0 ? 'text-blue-600 bg-blue-50/20' : 'text-gray-200'}">${getRaffleQty('C')}</td>
+          <td class="p-6 text-right border-l border-gray-50">
+            <div class="font-black text-gray-900 leading-none">$${(d.grandTotal || 0).toLocaleString()}</div>
+            <div class="text-[9px] font-black text-green-500 uppercase mt-1">Net: $${d.profit || 0}</div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  // --- ACTIONS ---
+
+  // Copy All Emails to Clipboard
+  document.getElementById('copy-all-emails')?.addEventListener('click', () => {
+    if (allEmails.length === 0) return;
+    const emailString = allEmails.join(', ');
+    navigator.clipboard.writeText(emailString);
+    
+    const btn = document.getElementById('copy-all-emails');
+    if (btn) {
+      const original = btn.innerHTML;
+      btn.innerText = "COPIED TO CLIPBOARD!";
+      btn.classList.replace('bg-blue-600', 'bg-green-600');
+      setTimeout(() => {
+        btn.innerHTML = original;
+        btn.classList.replace('bg-green-600', 'bg-blue-600');
+      }, 2000);
+    }
+  });
+
+  // Login
+  document.getElementById('login-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target as HTMLFormElement);
+    const err = document.getElementById('error-msg');
+    try {
+      await pb.collection('user').authWithPassword(
+        fd.get('email') as string, 
+        fd.get('password') as string
+      );
+      location.reload();
+    } catch (e) {
+      if (err) {
+        err.innerText = "INVALID AUTHENTICATION";
+        err.classList.remove('hidden');
+      }
+    }
+  });
+
+  // Logout
+  document.getElementById('logout-btn')?.addEventListener('click', () => {
+    pb.authStore.clear();
+    location.reload();
+  });
+
+  init();
+</script>
+
+<style>
+  /* Custom scrollbar for better visibility */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+  ::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
+</style>

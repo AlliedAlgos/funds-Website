@@ -131,7 +131,7 @@ import MainLayout from '../layouts/mainLayout.astro';
     try {
       // FIX 2: Changed '.collection('user')' to '.collection('users')' (standard plural)
       // FIX 3: If you are an ADMIN (not a user), use pb.admins.authWithPassword
-      await pb.collection('users').authWithPassword(
+      await pb.collection('user').authWithPassword(
         data.get('email'), 
         data.get('password')
       );
